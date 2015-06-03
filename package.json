@@ -1,0 +1,33 @@
+{
+  "name": "dolly-chart",
+  "version": "0.0.1",
+  "description": "Example project using dolly.js to navigate a fever chart",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/povdocs/dolly.git"
+  },
+  "homepage": "https://github.com/povdocs/dolly",
+  "bugs": {
+    "url": "https://github.com/povdocs/dolly/issues"
+  },
+  "author": "Brian Chirls <brian@chirls.com> (http://chirls.com)",
+  "license": "MIT",
+  "devDependencies": {
+    "babel-core": "^5.4.3",
+    "babel-loader": "^5.1.2",
+    "del": "^1.2.0",
+    "gulp": "^3.8.11",
+    "gulp-webpack": "^1.4.0",
+    "jshint": "^2.7.0",
+    "jshint-loader": "^0.8.3",
+    "node-libs-browser": "^0.5.0",
+    "object-assign": "^2.0.0",
+    "webpack": "^1.9.7"
+  },
+  "dependencies": {
+    "binary-search": "^1.2.0"
+  }
+}
