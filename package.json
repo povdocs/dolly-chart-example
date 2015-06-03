@@ -28,6 +28,7 @@
     "webpack": "^1.9.7"
   },
   "dependencies": {
-    "binary-search": "^1.2.0"
+    "binary-search": "^1.2.0",
+    "d3-xhr": "^3.5.5"
   }
 }
