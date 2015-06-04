@@ -6,7 +6,7 @@
 	var xhr = require('d3-xhr');
 	var binarySearch = require('binary-search');
 
-	var WEEK = 1000 * 60 * 60 * 24 * 7;
+	var PERIOD = 1;//1000 * 60 * 60 * 24 * 7;
 
 	//state
 	var dolly = new Dolly();
@@ -32,8 +32,9 @@
 	var ctx = document.getElementById('canvas').getContext('2d');
 
 	//config
-	var speed = 30; //weeks per second, left or right
-	var field = 'close';
+	var speed = 40; //periods per second, left or right
+	var field = 'immigrants';
+	var dataFile = 'data/immigration.tsv';
 	var colors = {
 		bg: '#333333',
 		line: 'rgb(63, 113, 190)',
@@ -49,9 +50,9 @@
 		vPadding: 10,
 		gridLine: 0.1,
 		xGrid: 10, //distance between x axis grid lines
-		x: 3, //distance per week on x axis
-		y: 1 / 10, //distance per $ on y axis
-		z: 3 //default zoom level
+		x: 8, //distance per period on x axis
+		y: 1 / 4000, //distance per $ on y axis
+		z: 5 //default zoom level
 	};
 
 	function keyDown(evt) {
@@ -88,9 +89,9 @@
 	Converts from date/value to x/y in "world" space
 	*/
 	function pointToX(point) {
-		//convert date to week # before scaling
-		var week = (point.date - min.date) / WEEK;
-		return week * dim.x;
+		//convert date to period # before scaling
+		var period = (point.date - min.date) / PERIOD;
+		return period * dim.x;
 	}
 
 	function pointToY(point) {
@@ -111,11 +112,11 @@
 	Given an x coord in world space, find the nearest data point
 
 	Restricts search to a small section, based on the assumption
-	that we're not missing more than a few weeks of data. Remove
+	that we're not missing more than a few periods of data. Remove
 	this optimization if the data changes
 	*/
 	function nearestPoint(x) {
-		var date = Math.floor(x / dim.x * WEEK) + min.date;
+		var date = Math.floor(x / dim.x * PERIOD) + min.date;
 		var est = data.length * (date - min.date) / max.date;
 		var lo = Math.max(0, Math.floor(est - 8));
 		var hi = Math.min(data.length - 1, Math.ceil(est + 8));
@@ -257,7 +258,7 @@
 		requestAnimationFrame(animate);
 	}
 
-	xhr('data/nasdaq.tsv', 'type:text/tab-separated-values', function(response) {
+	xhr(dataFile, 'type:text/tab-separated-values', function(response) {
 		var tsv = response.responseText.split('\n');
 		var fields = tsv.shift().split('\t');
 
@@ -270,11 +271,10 @@
 			return line.split('\t')
 				.reduce(function (prev, str, i) {
 					var field = fields[i];
-					var val;
-					if (i === 0) {
-						val = Date.parse(str);
-					} else {
-						val = parseFloat(str);
+					var val = parseFloat(str);
+					var date = Date.parse(str);
+					if (isNaN(val) && date > 0) {
+						val = date;
 					}
 
 					max[field] = Math.max(max[field], val);
