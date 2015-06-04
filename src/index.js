@@ -33,6 +33,7 @@
 
 	//config
 	var speed = 30; //weeks per second, left or right
+	var field = 'close';
 	var colors = {
 		bg: '#333333',
 		line: 'rgb(63, 113, 190)',
@@ -50,7 +51,7 @@
 		xGrid: 10, //distance between x axis grid lines
 		x: 3, //distance per week on x axis
 		y: 1 / 10, //distance per $ on y axis
-		z: 4 //default zoom level
+		z: 3 //default zoom level
 	};
 
 	function keyDown(evt) {
@@ -84,7 +85,7 @@
 	}
 
 	/*
-	Converts from date/close value to x/y in "world" space
+	Converts from date/value to x/y in "world" space
 	*/
 	function pointToX(point) {
 		//convert date to week # before scaling
@@ -93,7 +94,7 @@
 	}
 
 	function pointToY(point) {
-		return (point.close - min.close) * dim.y + dim.vPadding;
+		return (point[field] - min[field]) * dim.y + dim.vPadding;
 	}
 
 	/*
@@ -319,7 +320,7 @@
 		camera.minBounds.x = marginX;
 		camera.minBounds.y = marginY;
 		camera.maxBounds.x = max.x - marginX;
-		camera.maxBounds.y = (max.close - min.close) * dim.y - marginY + dim.vPadding * 2;
+		camera.maxBounds.y = (max[field] - min[field]) * dim.y - marginY + dim.vPadding * 2;
 
 		animate();
 
