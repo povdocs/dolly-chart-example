@@ -5,6 +5,7 @@
 	var Dolly = require('dolly');
 	var xhr = require('d3-xhr');
 	var binarySearch = require('binary-search');
+	var format = require('simple-number-formatter');
 
 	var PERIOD = 1;//1000 * 60 * 60 * 24 * 7;
 
@@ -19,6 +20,7 @@
 	};
 	var camera;
 	var player;
+	var timeline;
 	var buttons = {
 		left: false,
 		right: false,
@@ -27,9 +29,10 @@
 	};
 
 	var max = {}, min = {};
-	var currentIndex = 0;
 
 	var ctx = document.getElementById('canvas').getContext('2d');
+	var period = document.getElementById('period');
+	var value = document.getElementById('value');
 
 	//config
 	var speed = 40; //periods per second, left or right
@@ -211,42 +214,51 @@
 		var now = Date.now(),
 			delta = Math.min(500, (Date.now() - lastTime) / 1000);
 
-		function y(x) {
-			/*
-			todo: move all this logic into an imperative function
-			so we can re-use all these calculations to pick the current
-			data point and display the date and other stats.
-			*/
-			var i = nearestPoint(x),
-				lowX = pointToX(data[i]),
+		function updatePlayer() {
+			var i,
+				point,
+				next,
+				lowX,
 				highX,
 				partial,
-				next,
-				result;
+				x,
+				y;
 
-			result = pointToY(data[i]);
+			x = player.position.x;
+
+			//move left or right
+			if (buttons.leftKey || buttons.left) {
+				x -= speed * delta;
+			}
+			if (buttons.rightKey || buttons.right) {
+				x += speed * delta;
+			}
+
+			//keep on screen
+			x = Math.min(max.x, Math.max(min.x, x));
+
+			i = nearestPoint(x);
+			point = data[i];
+			lowX = pointToX(point);
+			y = pointToY(point);
 
 			//interpolate
 			if (x > lowX && i < data.length - 1) {
 				next = data[i + 1];
 				highX = pointToX(next);
 				partial = (x - lowX) / (highX - lowX);
-				result = (1 - partial) * result + partial * pointToY(next);
+				y = (1 - partial) * y + partial * pointToY(next);
 			}
 
-			return result;
+			player.position.x = x;
+			player.position.y = y;
+
+			//display stats
+			period.textContent = point.date;
+			value.textContent = format(point[field], '0,0', { thousandsDelimeter: ',' });
 		}
 
-		//move left or right
-		if (buttons.leftKey || buttons.left) {
-			player.position.x -= speed * delta;
-		}
-		if (buttons.rightKey || buttons.right) {
-			player.position.x += speed * delta;
-		}
-		player.position.x = Math.min(max.x, Math.max(min.x, player.position.x));
-		player.position.y = y(player.position.x);
-		currentIndex = nearestPoint(player.position.x);
+		updatePlayer();
 
 		dolly.update(delta);
 
@@ -306,9 +318,20 @@
 			lag: 0.85
 		});
 
+		timeline = dolly.prop({
+			name: 'timeline',
+			position: [player.position.x, 0, 0],
+			minBounds: [0, 0, 0],
+			maxBounds: [Infinity, 0, 0]
+		});
+
 		camera.follow(player, {
 			offset: [0, 0, dim.z],
 			radius: 6
+		});
+
+		timeline.follow(player, {
+			lag: 0
 		});
 
 		/*

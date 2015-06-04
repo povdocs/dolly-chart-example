@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "binary-search": "^1.2.0",
-    "d3-xhr": "^3.5.5"
+    "d3-xhr": "^3.5.5",
+    "simple-number-formatter": "^1.0.0"
   }
 }
