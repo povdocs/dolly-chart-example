@@ -102,27 +102,17 @@
 	}
 
 	/*
-	Convert from canvas space to world space
-	*/
-	function worldX(x) {
-	}
-
-	function worldY() {
-		// body...
-	}
-
-	/*
 	Given an x coord in world space, find the nearest data point
 
 	Restricts search to a small section, based on the assumption
 	that we're not missing more than a few periods of data. Remove
 	this optimization if the data changes
 	*/
-	function nearestPoint(x) {
-		var date = Math.floor(x / dim.x * PERIOD) + min.date;
-		var est = data.length * (date - min.date) / max.date;
-		var lo = Math.max(0, Math.floor(est - 8));
-		var hi = Math.min(data.length - 1, Math.ceil(est + 8));
+
+	function findPoint(date) {
+		// var est = data.length * (date - min.date) / max.date;
+		// var lo = Math.max(0, Math.floor(est - 8));
+		// var hi = Math.min(data.length - 1, Math.ceil(est + 8));
 		var index = binarySearch(data, {
 			date: date
 		}, comparePoints);//, lo, hi);
@@ -135,6 +125,11 @@
 		}
 
 		return index;
+	}
+
+	function nearestPoint(x) {
+		var date = Math.floor(x / dim.x * PERIOD) + min.date;
+		return findPoint(date);
 	}
 
 	function draw() {
@@ -270,6 +265,76 @@
 		requestAnimationFrame(animate);
 	}
 
+	function loadNotes() {
+		xhr('data/notes.tsv', 'type:text/tab-separated-values', function(response) {
+			var tsv = response.responseText.trim().split('\n');
+			var fields = tsv.shift().split('\t');
+
+			tsv.map(function (line, i) {
+				return line.split('\t')
+					.reduce(function (prev, str, i) {
+						var field = fields[i];
+						var val = parseFloat(str);
+						var date = Date.parse(str);
+						if (isNaN(val)) {
+							if (date > 0) {
+								val = date;
+							} else {
+								val = str;
+							}
+						}
+
+						prev[field] = val;
+						return prev;
+					}, Object.create(null));
+			}).forEach(function (note) {
+				var lo = findPoint(note.start);
+				var hi = Math.min(data.length, findPoint(note.end) + 1);
+				var minY = Infinity;
+				var maxY = -Infinity;
+				var minX = pointToX(data[lo]);
+				var maxX = pointToX(data[hi - 1]);
+				var i;
+				var y;
+				var point;
+
+				for (i = lo; i < hi; i++) {
+					point = data[i];
+					y = pointToY(point);
+					minY = Math.min(minY, y);
+					maxY = Math.max(maxY, y);
+				}
+
+				//create attractor
+				/*
+				Set up the prop as an attractor. playerProp is the prop that triggers
+				the transition by approaching the subject, and castleScene is the subject
+				to be approached. camProp is the prop that's moved by the attractor, and
+				offset is the position relative to the castle where we want to move the
+				camera
+				*/
+				var attractor = dolly.prop({
+					name: note.date,
+					position: [(minX + maxX) / 2, 0, 0]
+				});
+
+				camera.attract(timeline, attractor, {
+					offset: [0, (minY + maxY) / 2, note.zoom],
+					innerRadius: (maxX - minX) / 2,
+					outerRadius: 1.2 * (maxX - minX) / 2
+				});
+			});
+
+			timeline.on('enterattractor', function (prop, att) {
+				console.log('approaching', prop.name, att, prop);
+				console.log('player at ', player.position.toString());
+				console.log('timeline at ', timeline.position.toString());
+				console.log(data[nearestPoint(player.position.x)]);
+			});
+
+		});
+	}
+
 	xhr(dataFile, 'type:text/tab-separated-values', function(response) {
 		var tsv = response.responseText.split('\n');
 		var fields = tsv.shift().split('\t');
@@ -344,6 +409,8 @@
 		camera.minBounds.y = marginY;
 		camera.maxBounds.x = max.x - marginX;
 		camera.maxBounds.y = (max[field] - min[field]) * dim.y - marginY + dim.vPadding * 2;
+
+		loadNotes();
 
 		animate();
 
