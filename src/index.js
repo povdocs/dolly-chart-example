@@ -8,6 +8,7 @@
 	var format = require('simple-number-formatter');
 
 	var PERIOD = 1;//1000 * 60 * 60 * 24 * 7;
+	var dpr = window.devicePixelRatio || 1;
 
 	//state
 	var dolly = new Dolly();
@@ -48,11 +49,11 @@
 	};
 	var dim = {
 		chartLine: 1,
-		scale: 1, //canvas pixels per "world" unit
+		scale: 1 * dpr, //canvas pixels per "world" unit
 		player: 3,
 		vPadding: 10,
-		gridLine: 0.1,
-		xGrid: 10, //distance between x axis grid lines
+		gridLine: 1,
+		gridSpacing: 20, //distance between x axis grid lines
 		x: 8, //distance per period on x axis
 		y: 1 / 4000, //distance per $ on y axis
 		z: 5 //default zoom level
@@ -137,10 +138,6 @@
 		var width = ctx.canvas.width,
 			height = ctx.canvas.height;
 
-		//debug
-		// camera.position.set(width / 2 * dim.scale, height / 2 * dim.scale, 1);
-		// camera.position.z = 4;
-
 		//calculate "camera" values
 		var scale = camera.position.z * dim.scale;
 		var worldWidth = width * scale;
@@ -148,6 +145,12 @@
 		var minWorldX = camera.position.x - worldWidth / 2;
 		var maxWorldX = minWorldX + worldWidth;
 		var minWorldY = camera.position.y - worldHeight / 2;
+		var maxWorldY = minWorldY + worldHeight;
+
+		var i;
+		var lo, hi;
+		var x, y;
+		var point;
 
 		/*
 		Convert from "world" space to canvas space
@@ -166,21 +169,43 @@
 		ctx.fillStyle = colors.bg;
 		ctx.fillRect(0, 0, width, height);
 
+		lo = nearestPoint(Math.max(0, minWorldX));
+		hi = nearestPoint(maxWorldX) + 1;
+
 		//todo: draw x/y axes
-		//todo: draw grid
+
+		//draw grid lines
+		//todo: align with years
+		ctx.strokeStyle = colors.grid;
+		ctx.lineWidth = dim.gridLine;
+		ctx.beginPath();
+
+		//horizontal
+		i = Math.ceil(pointToX(data[lo]) / dim.gridSpacing) * dim.gridSpacing;
+		while (i < maxWorldX) {
+			x = canvasX(i);
+			ctx.moveTo(x, 0);
+			ctx.lineTo(x, height);
+			i += dim.gridSpacing;
+		}
+
+		i = Math.ceil(minWorldY / dim.gridSpacing) * dim.gridSpacing;
+		while (i < maxWorldY) {
+			y = canvasY(i);
+			ctx.moveTo(0, y);
+			ctx.lineTo(width, y);
+			i += dim.gridSpacing;
+		}
+		ctx.stroke();
 
 		//draw line
 		ctx.strokeStyle = colors.line;
 		ctx.lineWidth = dim.chartLine;
 		ctx.beginPath();
-		var lo = nearestPoint(Math.max(0, minWorldX));
-		var hi = nearestPoint(maxWorldX) + 1;
-		var i;
-
 		for (i = lo; i < hi; i++) {
-			let point = data[i],
-				x = canvasX(pointToX(point)),
-				y = canvasY(pointToY(point));
+			point = data[i];
+			x = canvasX(pointToX(point));
+			y = canvasY(pointToY(point));
 
 			if (i) {
 				ctx.lineTo(x, y);
@@ -192,7 +217,7 @@
 
 		//fill under graph
 		ctx.fillStyle = colors.fill;
-		ctx.lineTo(width * dim.scale, height * dim.scale);
+		ctx.lineTo(x, height * dim.scale);
 		ctx.lineTo(0, height * dim.scale);
 		ctx.fill();
 
@@ -334,6 +359,9 @@
 
 		});
 	}
+
+	ctx.canvas.width *= dpr;
+	ctx.canvas.height *= dpr;
 
 	xhr(dataFile, 'type:text/tab-separated-values', function(response) {
 		var tsv = response.responseText.split('\n');
