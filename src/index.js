@@ -14,6 +14,7 @@
 	var dolly = new Dolly();
 	var lastTime = 0;
 	var data;
+	var noteData = [];
 	var previous = {
 		x: -1,
 		y: -1,
@@ -34,6 +35,7 @@
 	var ctx = document.getElementById('canvas').getContext('2d');
 	var period = document.getElementById('period');
 	var value = document.getElementById('value');
+	var notes = document.getElementById('notes');
 
 	//config
 	var speed = 40; //periods per second, left or right
@@ -43,9 +45,10 @@
 		bg: '#333333',
 		line: 'rgb(63, 113, 190)',
 		fill: 'rgba(63, 113, 190, 0.3)',
-		grid: '#222222',
+		grid: '#666',
 		text: '#ffffff',
-		player: '#ff0000'
+		player: '#ff0000',
+		note: '#dddddd'
 	};
 	var dim = {
 		chartLine: 1,
@@ -53,6 +56,7 @@
 		player: 3,
 		vPadding: 10,
 		gridLine: 1,
+		noteLine: 2,
 		gridSpacing: 20, //distance between x axis grid lines
 		x: 8, //distance per period on x axis
 		y: 1 / 4000, //distance per $ on y axis
@@ -133,6 +137,22 @@
 		return findPoint(date);
 	}
 
+	function interpolate(x, point, next) {
+		var lowX = pointToX(point),
+			highX,
+			y = pointToY(point),
+			partial;
+
+		//interpolate
+		if (x > lowX && next) {
+			highX = pointToX(next);
+			partial = (x - lowX) / (highX - lowX);
+			y = (1 - partial) * y + partial * pointToY(next);
+		}
+
+		return y;
+	}
+
 	function draw() {
 		//todo: declare all variables at top
 		var width = ctx.canvas.width,
@@ -140,8 +160,8 @@
 
 		//calculate "camera" values
 		var scale = camera.position.z * dim.scale;
-		var worldWidth = width * scale;
-		var worldHeight = height * scale;
+		var worldWidth = width * scale / camera.position.z;
+		var worldHeight = height * scale / camera.position.z;
 		var minWorldX = camera.position.x - worldWidth / 2;
 		var maxWorldX = minWorldX + worldWidth;
 		var minWorldY = camera.position.y - worldHeight / 2;
@@ -180,7 +200,7 @@
 		ctx.lineWidth = dim.gridLine;
 		ctx.beginPath();
 
-		//horizontal
+		//horizontal grid lines
 		i = Math.ceil(pointToX(data[lo]) / dim.gridSpacing) * dim.gridSpacing;
 		while (i < maxWorldX) {
 			x = canvasX(i);
@@ -189,6 +209,7 @@
 			i += dim.gridSpacing;
 		}
 
+		//vertical grid lines
 		i = Math.ceil(minWorldY / dim.gridSpacing) * dim.gridSpacing;
 		while (i < maxWorldY) {
 			y = canvasY(i);
@@ -196,6 +217,24 @@
 			ctx.lineTo(width, y);
 			i += dim.gridSpacing;
 		}
+		ctx.stroke();
+
+		//note markers
+		ctx.strokeStyle = colors.note;
+		ctx.lineWidth = dim.noteLine;
+		ctx.beginPath();
+		noteData.forEach(function (note) {
+			var i = findPoint(note.date),
+				point = data[i],
+				next,
+				x = pointToX(point),
+				y = interpolate(x, point, data[i + 1]);
+
+			x = canvasX(x);
+			y = canvasY(y);
+			ctx.moveTo(x, y);
+			ctx.lineTo(x, height);
+		});
 		ctx.stroke();
 
 		//draw line
@@ -238,11 +277,7 @@
 			var i,
 				point,
 				next,
-				lowX,
-				highX,
-				partial,
-				x,
-				y;
+				x;
 
 			x = player.position.x;
 
@@ -259,19 +294,9 @@
 
 			i = nearestPoint(x);
 			point = data[i];
-			lowX = pointToX(point);
-			y = pointToY(point);
-
-			//interpolate
-			if (x > lowX && i < data.length - 1) {
-				next = data[i + 1];
-				highX = pointToX(next);
-				partial = (x - lowX) / (highX - lowX);
-				y = (1 - partial) * y + partial * pointToY(next);
-			}
-
+	
 			player.position.x = x;
-			player.position.y = y;
+			player.position.y = interpolate(x, point, data[i + 1]);
 
 			//display stats
 			period.textContent = point.date;
@@ -295,7 +320,7 @@
 			var tsv = response.responseText.trim().split('\n');
 			var fields = tsv.shift().split('\t');
 
-			tsv.map(function (line, i) {
+			noteData = tsv.map(function (line, i) {
 				return line.split('\t')
 					.reduce(function (prev, str, i) {
 						var field = fields[i];
@@ -312,7 +337,8 @@
 						prev[field] = val;
 						return prev;
 					}, Object.create(null));
-			}).forEach(function (note) {
+			});
+			noteData.forEach(function (note) {
 				var lo = findPoint(note.start);
 				var hi = Math.min(data.length, findPoint(note.end) + 1);
 				var minY = Infinity;
@@ -331,13 +357,6 @@
 				}
 
 				//create attractor
-				/*
-				Set up the prop as an attractor. playerProp is the prop that triggers
-				the transition by approaching the subject, and castleScene is the subject
-				to be approached. camProp is the prop that's moved by the attractor, and
-				offset is the position relative to the castle where we want to move the
-				camera
-				*/
 				var attractor = dolly.prop({
 					name: note.date,
 					position: [(minX + maxX) / 2, 0, 0]
@@ -348,15 +367,29 @@
 					innerRadius: (maxX - minX) / 2,
 					outerRadius: 1.2 * (maxX - minX) / 2
 				});
-			});
 
-			timeline.on('enterattractor', function (prop, att) {
-				console.log('approaching', prop.name, att, prop);
-				console.log('player at ', player.position.toString());
-				console.log('timeline at ', timeline.position.toString());
-				console.log(data[nearestPoint(player.position.x)]);
-			});
+				var div = document.createElement('div');
+				div.style.display = 'none';
+				notes.appendChild(div);
+				note.note
+					.split('\n')
+					.forEach(function (paragraph) {
+						var p = document.createElement('p');
+						p.textContent = paragraph;
+						div.appendChild(p);
+					});
 
+				timeline.on('enterattractor', function (prop, att) {
+					if (prop === attractor) {
+						div.style.display = '';
+					}
+				});
+				timeline.on('leaveattractor', function (prop, att) {
+					if (prop === attractor) {
+						div.style.display = 'none';
+					}
+				});
+			});
 		});
 	}
 
