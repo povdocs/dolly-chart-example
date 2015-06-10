@@ -64,7 +64,7 @@
 	};
 
 	function keyDown(evt) {
-		switch (event.keyCode) {
+		switch (evt.keyCode) {
 			case 37: //left
 			case 65: //a
 				buttons.leftKey = true;
@@ -77,7 +77,7 @@
 	}
 
 	function keyUp(evt) {
-		switch (event.keyCode) {
+		switch (evt.keyCode) {
 			case 37: //left
 			case 65: //a
 				buttons.leftKey = false;
