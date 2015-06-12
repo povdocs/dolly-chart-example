@@ -294,7 +294,7 @@
 
 			i = nearestPoint(x);
 			point = data[i];
-	
+
 			player.position.x = x;
 			player.position.y = interpolate(x, point, data[i + 1]);
 
