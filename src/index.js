@@ -3,7 +3,7 @@
 
 	//dependencies
 	var Dolly = require('dolly');
-	var xhr = require('d3-xhr');
+	var xhr = require('d3-xhr').xhr;
 	var binarySearch = require('binary-search');
 	var format = require('simple-number-formatter');
 
@@ -316,7 +316,7 @@
 	}
 
 	function loadNotes() {
-		xhr('data/notes.tsv', 'type:text/tab-separated-values', function(response) {
+		xhr('data/notes.tsv', function(response) {
 			var tsv = response.responseText.trim().split('\n');
 			var fields = tsv.shift().split('\t');
 
@@ -396,7 +396,7 @@
 	ctx.canvas.width *= dpr;
 	ctx.canvas.height *= dpr;
 
-	xhr(dataFile, 'type:text/tab-separated-values', function(response) {
+	xhr(dataFile, function(response) {
 		var tsv = response.responseText.split('\n');
 		var fields = tsv.shift().split('\t');
 
