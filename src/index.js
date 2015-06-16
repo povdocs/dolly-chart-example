@@ -23,9 +23,7 @@
 	var camera;
 	var player;
 	var timeline;
-	var buttons = {
-		left: false,
-		right: false,
+	var activeButtons = {
 		leftKey: false,
 		rightKey: false
 	};
@@ -52,6 +50,7 @@
 	};
 	var dim = {
 		chartLine: 1,
+		iconSize: 20,
 		scale: 1 * dpr, //canvas pixels per "world" unit
 		player: 3,
 		vPadding: 10,
@@ -62,32 +61,6 @@
 		y: 1 / 4000, //distance per $ on y axis
 		z: 5 //default zoom level
 	};
-
-	function keyDown(evt) {
-		switch (evt.keyCode) {
-			case 37: //left
-			case 65: //a
-				buttons.leftKey = true;
-				break;
-			case 39: //right
-			case 68: //d
-				buttons.rightKey = true;
-				break;
-		}
-	}
-
-	function keyUp(evt) {
-		switch (evt.keyCode) {
-			case 37: //left
-			case 65: //a
-				buttons.leftKey = false;
-				break;
-			case 39: //right
-			case 68: //d
-				buttons.rightKey = false;
-				break;
-		}
-	}
 
 	function comparePoints(a, b) {
 		return a.date - b.date;
@@ -107,18 +80,10 @@
 	}
 
 	/*
-	Given an x coord in world space, find the nearest data point
-
-	Restricts search to a small section, based on the assumption
-	that we're not missing more than a few periods of data. Remove
-	this optimization if the data changes
+	Given date, find the nearest data point
 	*/
-
-	function findPoint(date) {
-		// var est = data.length * (date - min.date) / max.date;
-		// var lo = Math.max(0, Math.floor(est - 8));
-		// var hi = Math.min(data.length - 1, Math.ceil(est + 8));
-		var index = binarySearch(data, {
+	function findPoint(list, date) {
+		var index = binarySearch(list, {
 			date: date
 		}, comparePoints);//, lo, hi);
 
@@ -134,7 +99,7 @@
 
 	function nearestPoint(x) {
 		var date = Math.floor(x / dim.x * PERIOD) + min.date;
-		return findPoint(date);
+		return findPoint(data, date);
 	}
 
 	function interpolate(x, point, next) {
@@ -154,7 +119,6 @@
 	}
 
 	function draw() {
-		//todo: declare all variables at top
 		var width = ctx.canvas.width,
 			height = ctx.canvas.height;
 
@@ -224,7 +188,7 @@
 		ctx.lineWidth = dim.noteLine;
 		ctx.beginPath();
 		noteData.forEach(function (note) {
-			var i = findPoint(note.date),
+			var i = findPoint(data, note.date),
 				point = data[i],
 				next,
 				x = pointToX(point),
@@ -271,7 +235,8 @@
 
 	function animate() {
 		var now = Date.now(),
-			delta = Math.min(500, (Date.now() - lastTime) / 1000);
+			delta = Math.min(500, (Date.now() - lastTime) / 1000),
+			moving = false;
 
 		function updatePlayer() {
 			var i,
@@ -282,11 +247,13 @@
 			x = player.position.x;
 
 			//move left or right
-			if (buttons.leftKey || buttons.left) {
+			if (activeButtons.leftKey || activeButtons.skipBackward) {
 				x -= speed * delta;
+				moving = true;
 			}
-			if (buttons.rightKey || buttons.right) {
+			if (activeButtons.rightKey || activeButtons.skipForward) {
 				x += speed * delta;
+				moving = true;
 			}
 
 			//keep on screen
@@ -304,11 +271,13 @@
 		}
 
 		updatePlayer();
-
 		dolly.update(delta);
 
-		//todo: don't draw if no updates
-		draw();
+		moving = moving || dolly.active(0.001);
+		if (moving) {
+			// don't draw if no updates
+			draw();
+		}
 
 		lastTime = now;
 
@@ -339,8 +308,8 @@
 					}, Object.create(null));
 			});
 			noteData.forEach(function (note) {
-				var lo = findPoint(note.start);
-				var hi = Math.min(data.length, findPoint(note.end) + 1);
+				var lo = findPoint(data, note.start);
+				var hi = Math.min(data.length, findPoint(data, note.end) + 1);
 				var minY = Infinity;
 				var maxY = -Infinity;
 				var minX = pointToX(data[lo]);
@@ -391,6 +360,108 @@
 				});
 			});
 		});
+	}
+
+	function buildInterface() {
+		var buttons = {
+				'pause': require('raw!open-iconic/svg/media-pause.svg'),
+				'play': require('raw!open-iconic/svg/media-play.svg'),
+				'stepBackward': require('raw!open-iconic/svg/media-step-backward.svg'),
+				'skipBackward': require('raw!open-iconic/svg/media-skip-backward.svg'),
+				'skipForward': require('raw!open-iconic/svg/media-skip-forward.svg'),
+				'stepForward': require('raw!open-iconic/svg/media-step-forward.svg')
+			},
+			controls = document.getElementById('controls');
+
+		//interface functions
+		function keyDown(evt) {
+			switch (evt.keyCode) {
+				case 37: //left
+				case 65: //a
+					activeButtons.leftKey = true;
+					break;
+				case 39: //right
+				case 68: //d
+					activeButtons.rightKey = true;
+					break;
+			}
+		}
+
+		function keyUp(evt) {
+			switch (evt.keyCode) {
+				case 37: //left
+				case 65: //a
+					activeButtons.leftKey = false;
+					break;
+				case 39: //right
+				case 68: //d
+					activeButtons.rightKey = false;
+					break;
+			}
+		}
+
+		function buttonDown(button, name, evt) {
+			button.classList.add('active');
+			activeButtons[name] = true;
+		}
+
+		function buttonUp(button, name) {
+			button.classList.remove('active');
+			activeButtons[name] = false;
+		}
+
+		function stepBack() {
+			var date = Math.floor(player.position.x / dim.x * PERIOD) + min.date,
+				i = findPoint(noteData, date),
+				x;
+
+			if (i < 0) {
+				return;
+			}
+
+			x = pointToX(noteData[i]);
+			if (player.position.x - x < 0.1) {
+				i--;
+				x = pointToX(noteData[i]);
+			}
+			player.position.x = x;
+		}
+
+		function stepNext() {
+			var date = Math.floor(player.position.x / dim.x * PERIOD) + min.date,
+				i = findPoint(noteData, date) + 1;
+
+			if (i < noteData.length) {
+				player.position.x = pointToX(noteData[i]);
+			}
+		}
+
+		//buttons
+		Object.keys(buttons).forEach(function (key) {
+			var span = document.createElement('span'),
+				svg;
+
+			span.innerHTML = buttons[key];
+			span.id = key;
+			svg = span.firstChild;
+			svg.setAttribute('width', dim.iconSize);
+			svg.setAttribute('height', dim.iconSize);
+
+			span.addEventListener('mousedown', buttonDown.bind(null, span, key), false);
+			span.addEventListener('mouseup', buttonUp.bind(null, span, key), false);
+			span.addEventListener('mouseup', buttonUp.bind(null, span, key), false);
+
+			controls.appendChild(span);
+			buttons[key] = span;
+		});
+
+		buttons.pause.className = 'hidden';
+		buttons.stepBackward.addEventListener('click', stepBack, false);
+		buttons.stepForward.addEventListener('click', stepNext, false);
+
+		//keyboard
+		document.addEventListener('keydown', keyDown, false);
+		document.addEventListener('keyup', keyUp, false);
 	}
 
 	ctx.canvas.width *= dpr;
@@ -472,10 +543,8 @@
 		camera.maxBounds.y = (max[field] - min[field]) * dim.y - marginY + dim.vPadding * 2;
 
 		loadNotes();
+		buildInterface();
 
 		animate();
-
-		document.addEventListener('keydown', keyDown, false);
-		document.addEventListener('keyup', keyUp, false);
 	});
 }());

@@ -36,6 +36,41 @@
 			padding: 20px;
 		}
 
+		#controls {
+			display: flex;
+			width: 960px;
+		}
+
+		#controls > span {
+			flex-grow: 1;
+			text-align: center;
+			background-color: #333333;
+			border: #666 solid 1px;
+			padding: 8px;
+			fill: #666;
+			cursor: pointer;
+
+			-webkit-touch-callout: none;
+			-webkit-user-select: none;
+			-khtml-user-select: none;
+			-moz-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
+		}
+
+		#controls > span.hidden {
+			display: none;
+		}
+
+		#controls > span:hover {
+			fill: #888;
+		}
+
+		#controls > span.active,
+		#controls > span.active:hover {
+			fill: #999;
+		}
+
 		</style>
 	</head>
 	<body>
@@ -44,6 +79,7 @@
 			<div id="period"></div>
 			<div id="value"></div>
 		</div>
+		<div id="controls"></div>
 		<div id="notes"></div>
 		<script type="text/javascript" src="dist/index.js" charset="utf-8"></script>
 	</body>
