@@ -20,6 +20,8 @@
 		y: -1,
 		z: -1
 	};
+	var playRate = 1;
+	var playing = false;
 	var camera;
 	var player;
 	var timeline;
@@ -255,6 +257,10 @@
 				x += speed * delta;
 				moving = true;
 			}
+			if (!moving && playing) {
+				x += speed * playRate * delta;
+				moving = true;
+			}
 
 			//keep on screen
 			x = Math.min(max.x, Math.max(min.x, x));
@@ -288,6 +294,25 @@
 		xhr('data/notes.tsv', function(response) {
 			var tsv = response.responseText.trim().split('\n');
 			var fields = tsv.shift().split('\t');
+			var activeAttractors = {};
+
+			function updateAttractor(prop, att) {
+				var k;
+				var attraction = 0;
+				var att;
+
+				activeAttractors[prop.id] = att || 0;
+
+				for (k in activeAttractors) {
+					if (activeAttractors.hasOwnProperty(k)) {
+						att = activeAttractors[k];
+						attraction = Math.max(attraction, att);
+					}
+				}
+
+				//slight slowdown in playback rate when close to points of interest
+				playRate = 1 - attraction * 0.5;
+			}
 
 			noteData = tsv.map(function (line, i) {
 				return line.split('\t')
@@ -359,6 +384,10 @@
 					}
 				});
 			});
+
+			timeline.on('enterattractor', updateAttractor);
+			timeline.on('moveattractor', updateAttractor);
+			timeline.on('leaveattractor', updateAttractor);
 		});
 	}
 
@@ -374,15 +403,30 @@
 			controls = document.getElementById('controls');
 
 		//interface functions
+
+		function play() {
+			playing = true;
+			buttons.play.classList.add('hidden');
+			buttons.pause.classList.remove('hidden');
+		}
+
+		function pause() {
+			playing = false;
+			buttons.play.classList.remove('hidden');
+			buttons.pause.classList.add('hidden');
+		}
+
 		function keyDown(evt) {
 			switch (evt.keyCode) {
 				case 37: //left
 				case 65: //a
 					activeButtons.leftKey = true;
+					pause();
 					break;
 				case 39: //right
 				case 68: //d
 					activeButtons.rightKey = true;
+					pause();
 					break;
 			}
 		}
@@ -397,10 +441,17 @@
 				case 68: //d
 					activeButtons.rightKey = false;
 					break;
+				case 32: //space
+					if (playing) {
+						pause();
+					} else {
+						play();
+					}
 			}
 		}
 
 		function buttonDown(button, name, evt) {
+			pause();
 			button.classList.add('active');
 			activeButtons[name] = true;
 		}
@@ -458,6 +509,8 @@
 		buttons.pause.className = 'hidden';
 		buttons.stepBackward.addEventListener('click', stepBack, false);
 		buttons.stepForward.addEventListener('click', stepNext, false);
+		buttons.play.addEventListener('click', play, false);
+		buttons.pause.addEventListener('click', pause, false);
 
 		//keyboard
 		document.addEventListener('keydown', keyDown, false);
