@@ -1,5 +1,5 @@
 {
-  "name": "dolly-chart",
+  "name": "dolly-chart-example",
   "version": "0.0.1",
   "description": "Example project using dolly.js to navigate a fever chart",
   "scripts": {
@@ -7,11 +7,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/povdocs/dolly.git"
+    "url": "git://github.com/povdocs/dolly-chart-example.git"
   },
-  "homepage": "https://github.com/povdocs/dolly",
+  "homepage": "https://github.com/povdocs/dolly-chart-example",
   "bugs": {
-    "url": "https://github.com/povdocs/dolly/issues"
+    "url": "https://github.com/povdocs/dolly-chart-example/issues"
   },
   "author": "Brian Chirls <brian@chirls.com> (http://chirls.com)",
   "license": "MIT",
