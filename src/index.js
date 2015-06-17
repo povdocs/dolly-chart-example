@@ -271,7 +271,11 @@
 				Adjust speed for slope so the "player" moves at a constant rate
 				regardless of whether it moves up or down.
 				*/
-				next = data[Math.max(0, Math.min(data.length - 1, i + direction))];
+				if (i) {
+					next = data[Math.max(0, Math.min(data.length - 1, i + direction))];
+				} else {
+					next = data[1];
+				}
 				x1 = pointToX(point);
 				x2 = pointToX(next);
 				y1 = pointToY(point);
