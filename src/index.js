@@ -38,7 +38,6 @@
 	var notes = document.getElementById('notes');
 
 	//config
-	var speed = 40; //periods per second, left or right
 	var field = 'immigrants';
 	var dataFile = 'data/immigration.tsv';
 	var colors = {
@@ -51,6 +50,7 @@
 		note: '#dddddd'
 	};
 	var dim = {
+		speed: 50, //periods per second, left or right
 		chartLine: 1,
 		iconSize: 20,
 		scale: 1 * dpr, //canvas pixels per "world" unit
@@ -238,49 +238,67 @@
 	function animate() {
 		var now = Date.now(),
 			delta = Math.min(500, (Date.now() - lastTime) / 1000),
-			moving = false;
+			moving;
 
 		function updatePlayer() {
 			var i,
 				point,
 				next,
-				x;
+				direction = 0,
+				x,
+				x1, x2,
+				y1, y2,
+				speed;
 
 			x = player.position.x;
 
 			//move left or right
 			if (activeButtons.leftKey || activeButtons.skipBackward) {
-				x -= speed * delta;
-				moving = true;
+				direction -= 1;
 			}
 			if (activeButtons.rightKey || activeButtons.skipForward) {
-				x += speed * delta;
-				moving = true;
+				direction += 1;
 			}
-			if (!moving && playing) {
-				x += speed * playRate * delta;
-				moving = true;
+			if (!direction && playing) {
+				direction = 1;
 			}
-
-			//keep on screen
-			x = Math.min(max.x, Math.max(min.x, x));
 
 			i = nearestPoint(x);
 			point = data[i];
 
-			player.position.x = x;
+			if (direction) {
+				/*
+				Adjust speed for slope so the "player" moves at a constant rate
+				regardless of whether it moves up or down.
+				*/
+				next = data[Math.max(0, Math.min(data.length - 1, i + direction))];
+				x1 = pointToX(point);
+				x2 = pointToX(next);
+				y1 = pointToY(point);
+				y2 = pointToY(next);
+				speed = dim.x / Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+
+				x += dim.speed * speed * delta * direction;
+
+				//keep from going off the edge of the screen
+				x = Math.min(max.x, Math.max(min.x, x));
+
+				player.position.x = x;
+			}
+
 			player.position.y = interpolate(x, point, data[i + 1]);
 
 			//display stats
 			period.textContent = point.date;
 			value.textContent = format(point[field], '0,0', { thousandsDelimeter: ',' });
+
+			return !!direction;
 		}
 
-		updatePlayer();
+		moving = updatePlayer();
 		dolly.update(delta);
 
-		moving = moving || dolly.active(0.001);
-		if (moving) {
+		if (moving || dolly.active(0.001)) {
 			// don't draw if no updates
 			draw();
 		}
