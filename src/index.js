@@ -451,6 +451,8 @@
 			timeline.on('enterattractor', updateAttractor);
 			timeline.on('moveattractor', updateAttractor);
 			timeline.on('leaveattractor', updateAttractor);
+
+			draw();
 		});
 	}
 
