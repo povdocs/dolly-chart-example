@@ -7,21 +7,31 @@
 		<style type="text/css">
 
 		body {
-			margin: 0;
-			padding: 0;
-			font: 20px sans-serif;
+			font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+			color: #eee;
+			overflow: hidden;
+			background: rgb(40, 40, 40);
+
+			height: 100%;
+			width: 100%;
+			margin: 0px;
+			padding: 0px;
+
+			/* for all svg icons */
+			fill: rgba(200, 200, 200, 0.5);
 		}
 
 		#canvas {
-			width: 960px;
+			display: block;
 		}
 
-		#info {
+		#stats {
 			position: absolute;
 			top: 0;
-			left: 0;
+			right: 0;
 			padding: 20px;
 			color: white;
+			text-align: right;
 		}
 
 		#period {
@@ -39,7 +49,7 @@
 
 		#controls {
 			display: flex;
-			width: 960px;
+			width: 100%;
 		}
 
 		#controls > span {
@@ -72,19 +82,86 @@
 			fill: #999;
 		}
 
+		#info {
+			z-index: 100;
+			position: absolute;
+			left: 10px;
+			top: 10px;
+
+			border-radius: 5px;
+			box-sizing: border-box;
+		}
+
+		#info.open {
+			background-color: rgba(20, 20, 20, 0.5);
+		}
+
+		#info > article {
+			display: none;
+
+			margin: 0 0 0 40px;
+			padding: 10px;
+			width: 350px;
+
+			font-size: 14px;
+			text-shadow: 0 1px 0 rgba( 255,255,255,.2 ), 0 -1px 0 rgba( 0,0,0,.2 );
+		}
+
+		#info > article a,
+		#info > article a:visited {
+			color: #eee;
+		}
+
+		#info.open > article {
+			display: block;
+		}
+
+		#infobutton {
+			width: 20px;
+			height: 20px;
+			margin: 10px;
+			float: left;
+			cursor: pointer;
+		}
+
+		h1 {
+			font-size: 16px;
+			margin: 0 0 4px;
+		}
+
+
 		</style>
 	</head>
 	<body>
 		<canvas width="960" height="540" id="canvas"></canvas>
-		<div id="info">
+		<div id="stats">
 			<div id="period"></div>
 			<div id="value"></div>
 			<div id="notes"></div>
 		</div>
+		<div id="info">
+			<svg version="1.1" id="infobutton" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+				width="112px" height="112px" viewBox="0 0 112 112" enable-background="new 0 0 112 112" xml:space="preserve">
+				<g>
+					<path d="M60.361,28.418c-0.563-0.434-1.214-0.742-1.97-0.915c-0.741-0.172-1.544-0.261-2.389-0.261
+						c-0.851,0-1.652,0.089-2.414,0.261c-0.76,0.173-1.422,0.481-1.987,0.915c-0.56,0.435-1.003,1.012-1.33,1.723
+						c-0.327,0.714-0.485,1.604-0.485,2.679c0,1.05,0.164,1.932,0.485,2.655c0.327,0.724,0.767,1.312,1.33,1.745
+						c0.565,0.435,1.228,0.751,1.987,0.934c0.761,0.187,1.563,0.28,2.414,0.28c0.845,0,1.646-0.095,2.389-0.28
+						c0.756-0.183,1.404-0.504,1.97-0.934c0.56-0.434,1.013-1.018,1.349-1.745c0.336-0.72,0.504-1.605,0.504-2.655
+						c0-1.073-0.168-1.969-0.504-2.679C61.374,29.43,60.921,28.852,60.361,28.418z"/>
+					<rect x="50.271" y="42.912" width="11.419" height="41.846"/>
+				</g>
+				<path d="M56,0C25.074,0,0,25.074,0,56s25.074,56,56,56s56-25.074,56-56S86.926,0,56,0z M56,102.666
+					C30.227,102.666,9.333,81.773,9.333,56C9.333,30.226,30.227,9.333,56,9.333S102.666,30.226,102.666,56
+					C102.666,81.773,81.773,102.666,56,102.666z" />
+			</svg>
+			<article>
+				<h1>Virtual Camera Control Experiment</h1>
+				<p>Data compiled and annotated by Jacqueline Ferro, from <a href="http://www.dhs.gov/yearbook-immigration-statistics">US DHS Yearbook of Immigration Statistics 2013</a>.</p>
+				<p>Code by <a href="http://chirls.com">Brian Chirls</a> is available on <a href="http://github.com/povdocs/dolly-chart-example">GitHub</a>.</p>
+			</article>
+		</div>
 		<div id="controls"></div>
-		<article>
-			<p>Data compiled and annotated by Jacqueline Ferro, from <a href="http://www.dhs.gov/yearbook-immigration-statistics">US DHS Yearbook of Immigration Statistics 2013</a>.
-		</article>
 		<script type="text/javascript" src="dist/index.js" charset="utf-8"></script>
 		<script>
 		(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
