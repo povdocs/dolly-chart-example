@@ -21,6 +21,8 @@
 		z: -1
 	};
 	var playRate = 1;
+	var lastResize = -1;
+	var resizeTimeout;
 	var playing = false;
 	var camera;
 	var player;
@@ -36,6 +38,9 @@
 	var period = document.getElementById('period');
 	var value = document.getElementById('value');
 	var notes = document.getElementById('notes');
+	var infobutton = document.getElementById('infobutton');
+	var info = document.getElementById('info');
+	var controls = document.getElementById('controls');
 
 	//config
 	var field = 'immigrants';
@@ -63,6 +68,42 @@
 		y: 1 / 4000, //distance per $ on y axis
 		z: 5 //default zoom level
 	};
+
+	function resize() {
+		var width,
+			height,
+			marginX,
+			marginY;
+
+		//throttle to one resize every 100ms
+		clearTimeout(resizeTimeout);
+		if (Date.now() - lastResize < 100) {
+			resizeTimeout = setTimeout(resize);
+			return;
+		}
+
+		width = window.innerWidth;
+		height = window.innerHeight;
+
+		height -= controls.offsetHeight;
+
+		ctx.canvas.width = width;
+		ctx.canvas.height = height;
+
+		/*
+		set min/max of camera based on zoom
+		*/
+		marginX = width / (dim.z * dim.scale) / 2;
+		marginY = height / (dim.z * dim.scale) / 2;
+		camera.minBounds.x = marginX;
+		camera.minBounds.y = marginY;
+		camera.maxBounds.x = max.x - marginX;
+		camera.maxBounds.y = (max[field] - min[field]) * dim.y - marginY + dim.vPadding * 2;
+
+
+		draw();
+		lastResize = Date.now();
+	}
 
 	function comparePoints(a, b) {
 		return a.date - b.date;
@@ -421,8 +462,7 @@
 				'skipBackward': require('raw!open-iconic/svg/media-skip-backward.svg'),
 				'skipForward': require('raw!open-iconic/svg/media-skip-forward.svg'),
 				'stepForward': require('raw!open-iconic/svg/media-step-forward.svg')
-			},
-			controls = document.getElementById('controls');
+			};
 
 		//interface functions
 
@@ -493,7 +533,7 @@
 			}
 
 			x = pointToX(noteData[i]);
-			if (player.position.x - x < 0.1) {
+			if (i && player.position.x - x < 0.1) {
 				i--;
 				x = pointToX(noteData[i]);
 			}
@@ -534,13 +574,18 @@
 		buttons.play.addEventListener('click', play, false);
 		buttons.pause.addEventListener('click', pause, false);
 
+		infobutton.addEventListener('click', function () {
+			if (info.className) {
+				info.className = '';
+			} else {
+				info.className = 'open';
+			}
+		});
+
 		//keyboard
 		document.addEventListener('keydown', keyDown, false);
 		document.addEventListener('keyup', keyUp, false);
 	}
-
-	ctx.canvas.width *= dpr;
-	ctx.canvas.height *= dpr;
 
 	xhr(dataFile, function(response) {
 		var tsv = response.responseText.split('\n');
@@ -610,20 +655,12 @@
 			lag: 0
 		});
 
-		/*
-		set min/max of camera based on zoom
-		todo: re-calculate this if canvas is resized
-		*/
-		var marginX = ctx.canvas.width / (dim.z * dim.scale) / 2;
-		var marginY = ctx.canvas.height / (dim.z * dim.scale) / 2;
-		camera.minBounds.x = marginX;
-		camera.minBounds.y = marginY;
-		camera.maxBounds.x = max.x - marginX;
-		camera.maxBounds.y = (max[field] - min[field]) * dim.y - marginY + dim.vPadding * 2;
-
 		loadNotes();
 		buildInterface();
 
+		resize();
 		animate();
 	});
+
+	window.addEventListener('resize', resize, false);
 }());
