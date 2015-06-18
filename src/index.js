@@ -359,12 +359,16 @@
 			var fields = tsv.shift().split('\t');
 			var activeAttractors = {};
 
-			function updateAttractor(prop, att) {
+			function updateAttractor(prop, subject, amount) {
 				var k;
 				var attraction = 0;
 				var att;
 
-				activeAttractors[prop.id] = att || 0;
+				if (amount) {
+					activeAttractors[subject.id] = amount;
+				} else {
+					delete activeAttractors[subject.id];
+				}
 
 				for (k in activeAttractors) {
 					if (activeAttractors.hasOwnProperty(k)) {
@@ -436,21 +440,21 @@
 						div.appendChild(p);
 					});
 
-				timeline.on('enterattractor', function (prop, att) {
-					if (prop === attractor) {
+				camera.on('enterattractor', function (prop, subject, att) {
+					if (subject === attractor) {
 						div.style.display = '';
 					}
 				});
-				timeline.on('leaveattractor', function (prop, att) {
-					if (prop === attractor) {
+				camera.on('leaveattractor', function (prop, subject, att) {
+					if (subject === attractor) {
 						div.style.display = 'none';
 					}
 				});
 			});
 
-			timeline.on('enterattractor', updateAttractor);
-			timeline.on('moveattractor', updateAttractor);
-			timeline.on('leaveattractor', updateAttractor);
+			camera.on('enterattractor', updateAttractor);
+			camera.on('moveattractor', updateAttractor);
+			camera.on('leaveattractor', updateAttractor);
 
 			draw();
 		});
