@@ -590,6 +590,10 @@
 			lag: 0.85
 		});
 
+		/*
+		A separate prop for timeline that follows the player along the x
+		axis, so the attractor is not affected by distance along the y axis
+		*/
 		timeline = dolly.prop({
 			name: 'timeline',
 			position: [player.position.x, 0, 0],
