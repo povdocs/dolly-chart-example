@@ -32,7 +32,7 @@
   "dependencies": {
     "binary-search": "^1.2.0",
     "d3-xhr": "^0.1.0",
-    "dolly": "git+ssh://git@github.com/povdocs/dolly.git",
+    "dolly": "0.0.3",
     "simple-number-formatter": "^1.0.0"
   }
 }
