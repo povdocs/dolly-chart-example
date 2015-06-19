@@ -1,5 +1,7 @@
 An example of using [dolly.js](https://github.com/povdocs/dolly) to drive a virtual camera view of a line chart.
 
+[View demo](https://povdocs.github.io/dolly-chart-example)
+
 ## Build
 
 1. Install node/npm
