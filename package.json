@@ -34,5 +34,39 @@
     "d3-xhr": "^0.1.0",
     "dolly": "0.0.3",
     "simple-number-formatter": "^1.0.0"
+  },
+  "jshintConfig": {
+      "globals": {
+          "console": true
+      },
+
+      "esnext": true,
+      "bitwise": true,
+      "browser": true,
+      "camelcase": true,
+      "curly": true,
+      "eqeqeq": true,
+      "es3": true,
+      "forin": true,
+      "freeze": true,
+      "funcscope": true,
+      "globalstrict": true,
+      "immed": true,
+      "iterator": true,
+      "latedef": true,
+      "maxparams": 4,
+      "newcap": true,
+      "noarg": true,
+      "nonbsp": true,
+      "nonew": true,
+      "notypeof": true,
+      "quotmark": "single",
+      "shadow": true,
+      "singleGroups": true,
+      "undef": true,
+      "unused": true,
+
+      "failOnHint": true,
+      "emitErrors": true
   }
 }

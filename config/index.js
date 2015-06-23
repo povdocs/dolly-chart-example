@@ -31,41 +31,7 @@ module.exports = (function () {
 			]
 		},
 
-		//pretty strict
-		jshint: {
-			globals: {
-				console: true
-			},
-
-			esnext: true,
-			bitwise: true,
-			browser: true,
-			camelcase: true,
-			curly: true,
-			eqeqeq: true,
-			es3: true,
-			forin: true,
-			freeze: true,
-			funcscope: true,
-			globalstrict: true,
-			immed: true,
-			iterator: true,
-			latedef: true,
-			maxparams: 4,
-			newcap: true,
-			noarg: true,
-			nonbsp: true,
-			nonew: true,
-			notypeof: true,
-			quotmark: 'single',
-			shadow: true,
-			//singleGroups: true,
-			undef: true,
-			//unused: true, todo: add this back in when more stuff is working
-
-			failOnHint: true,
-			emitErrors: true
-		}
+		jshint: pkg.jshintConfig
 	};
 
 	var exports = {};
@@ -90,10 +56,10 @@ module.exports = (function () {
 			new webpack.optimize.UglifyJsPlugin({
 				compress: {
 					warnings: false
-				},
+				}
 			}),
 			new webpack.BannerPlugin(banner)
-		],
+		]
 	});
 
 	return exports;
