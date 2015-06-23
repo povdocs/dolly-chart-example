@@ -15,11 +15,6 @@
 	var lastTime = 0;
 	var data;
 	var noteData = [];
-	var previous = {
-		x: -1,
-		y: -1,
-		z: -1
-	};
 	var playRate = 1;
 	var lastResize = -1;
 	var resizeTimeout;
@@ -233,7 +228,6 @@
 		noteData.forEach(function (note) {
 			var i = findPoint(data, note.date),
 				point = data[i],
-				next,
 				x = pointToX(point),
 				y = interpolate(x, point, data[i + 1]);
 
@@ -381,7 +375,7 @@
 				playRate = 1 - attraction * 0.5;
 			}
 
-			noteData = tsv.map(function (line, i) {
+			noteData = tsv.map(function (line) {
 				return line.split('\t')
 					.reduce(function (prev, str, i) {
 						var field = fields[i];
@@ -440,12 +434,12 @@
 						div.appendChild(p);
 					});
 
-				camera.on('enterattractor', function (prop, subject, att) {
+				camera.on('enterattractor', function (prop, subject) {
 					if (subject === attractor) {
 						div.style.display = '';
 					}
 				});
-				camera.on('leaveattractor', function (prop, subject, att) {
+				camera.on('leaveattractor', function (prop, subject) {
 					if (subject === attractor) {
 						div.style.display = 'none';
 					}
@@ -518,7 +512,7 @@
 			}
 		}
 
-		function buttonDown(button, name, evt) {
+		function buttonDown(button, name) {
 			pause();
 			button.classList.add('active');
 			activeButtons[name] = true;
@@ -602,7 +596,7 @@
 			max[field] = -Infinity;
 		});
 
-		data = tsv.map(function (line, i) {
+		data = tsv.map(function (line) {
 			return line.split('\t')
 				.reduce(function (prev, str, i) {
 					var field = fields[i];
