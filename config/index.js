@@ -31,7 +31,10 @@ module.exports = (function () {
 			]
 		},
 
-		jshint: pkg.jshintConfig
+		jshint: assign({
+			failOnHint: true,
+			emitErrors: true
+		}, pkg.jshintConfig)
 	};
 
 	var exports = {};
