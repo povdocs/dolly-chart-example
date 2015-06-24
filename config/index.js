@@ -62,7 +62,10 @@ module.exports = (function () {
 				}
 			}),
 			new webpack.BannerPlugin(banner)
-		]
+		],
+		jshint: assign({}, common.jshint, {
+	      unused: true
+		})
 	});
 
 	return exports;
